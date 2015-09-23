@@ -292,25 +292,28 @@ class AnnouncementNamespace(BaseNamespace):
 
     @staticmethod
     def notify_ta(user_name, course_number, json_parse=True):
-        msg = {
-            'type': 'notifyta',
-            'name': user_name
-        }
+        # Hot fix for ta objects not existing on the socket. Weird but oh well.
+        # This code will be removed with the redis update anyway.
+        pass
+        # msg = {
+        #     'type': 'notifyta',
+        #     'name': user_name
+        # }
+        #
+        # for _, connection in AnnouncementNamespace._connections.items():
+        #     # If the connectoin isn't a ta, then bail out
+        #     try:
+        #         ta = connection['user'].ta
+        #     except TA.DoesNotExist:
+        #         continue
 
-        for _, connection in AnnouncementNamespace._connections.items():
-            # If the connectoin isn't a ta, then bail out
-            try:
-                ta = connection['user'].ta
-            except TA.DoesNotExist:
-                continue
+        #     course_office_hours = OfficeHour.objects.on_duty_for_course(
+        #         course_number)
 
-            course_office_hours = OfficeHour.objects.on_duty_for_course(
-                course_number)
-
-            active_for_course = ta.course.filter(number=course_number).exists()
-            on_duty = course_office_hours.filter(ta__pk=ta.pk).exists()
-            if ta.active and active_for_course and on_duty:
-                connection['socket'].send(msg, json_parse)
+        #     active_for_course = ta.course.filter(number=course_number).exists()
+        #     on_duty = course_office_hours.filter(ta__pk=ta.pk).exists()
+        #     if ta.active and active_for_course and on_duty:
+        #         connection['socket'].send(msg, json_parse)
 
     @staticmethod
     def notify_user(which_user, ta_name, json_parse=True):
