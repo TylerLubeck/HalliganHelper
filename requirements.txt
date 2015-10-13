@@ -18,16 +18,16 @@ django-compressor==1.4
 django-extensions==1.2.5
 django-htmlmin==0.7.0
 django-imagekit==3.2.4
--e git+https://github.com/TylerLubeck/django-oauth2-provider.git@aac9f4532c4b1c9d38a69e5624a42c447ecfdbcb#egg=django_oauth2_provider-master
-django-pipeline==1.5.0
+-e git+https://github.com/TylerLubeck/django-oauth2-provider.git#egg=django_oauth2_provider-master
+django-pipeline==1.5.4
 django-pylibmc-sasl==0.2.4
--e git+https://github.com/macropin/django-registration.git@5c0a4b04784720c1e2a4fc7f6c9e8286c28e8d11#egg=django_registration_redux-master
+django-registration==1.0
+django-registration-redux==1.2
 django-tastypie==0.12.1
 django-toolbelt==0.0.1
 django-widget-tweaks==1.4.1
 futures==3.0.2
 gevent==1.0
-gevent-socketio==0.3.6
 gevent-websocket==0.9.3
 greenlet==0.4.2
 gunicorn==19.3.0
