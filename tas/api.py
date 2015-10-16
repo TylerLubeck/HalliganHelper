@@ -176,9 +176,15 @@ class RequestResource(ModelResource):
             bundle.obj.who_solved = request.user.ta
 
         return_val = super(RequestResource, self).obj_update(bundle, **kwargs)
-        QueueNamespace.notify_request(bundle.obj.pk,
-                                      bundle.obj.course.number,
-                                      'request_update')
+
+        websocket_data = {
+            'type': 'request_update',
+            'id': bundle.obj.pk,
+            'course_id': bundle.obj.course.pk,
+            'remove': bundle.obj.cancelled or bundle.obj.solved
+        }
+        publish_ta_message(websocket_data)
+
         return return_val
 
     def obj_create(self, bundle, **kwargs):
