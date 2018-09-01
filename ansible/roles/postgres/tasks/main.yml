@@ -18,8 +18,8 @@
   with_items:
     - libpq-dev
     - python-psycopg2
-    - postgresql-9.4
-    - postgresql-contrib-9.4
+    - postgresql-9.5
+    - postgresql-contrib-9.5
 
 - name: ensure postgres is running
   service: name=postgresql state=started

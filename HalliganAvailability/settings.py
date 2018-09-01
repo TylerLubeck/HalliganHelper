@@ -1,4 +1,4 @@
-# Django settings for HalliganAvailability project.
+#Django settings for HalliganAvailability project.
 import os
 
 PROJECT_ROOT = os.path.join(os.path.dirname(__file__), '..')
@@ -150,8 +150,9 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': 'halliganhelper',
         'USER': 'postgres',
-        'PASSWORD': '',
-        'HOST': 'localhost'
+        'PASSWORD': 'halliganhelper',
+        'HOST': 'localhost',
+        'PORT': '5432'
     }
 }
 

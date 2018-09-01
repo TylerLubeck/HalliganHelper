@@ -1,5 +1,6 @@
 ---
 - hosts: localhost
+  connection: local
   remote_user: vagrant
   become: yes
   vars_files:
@@ -11,3 +12,8 @@
     - role: ANXS.postgresql
     - role: geerlingguy.nodejs
     - { role: vagrant, tags: ['halliganhelper'] }
+
+
+
+
+
