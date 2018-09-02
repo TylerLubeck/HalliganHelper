@@ -1,0 +1,110 @@
+# This compose file is set up for production style deploys
+
+version: '3.7'
+services:
+
+  # This is the main django webapp.
+  web:
+    build:
+      context: .
+      dockerfile: docker/hh-python-core
+    depends_on:
+      - db
+      - redis
+    command: "uwsgi --http-socket :8000 --master --workers 4 --wsgi-file HalliganAvailability/wsgi.py"
+    secrets:
+      - db_password
+      - redis_password
+      - email_password
+      - secret_key
+    environment:
+      - "DEBUG=False"
+      - "DJANGO_SETTINGS_MODULE=HalliganAvailability.settings"
+      - "REDIS_HOST=redis"
+      - "DB_NAME=halliganhelper"
+      - "DB_USER=halliganhelper"
+
+  websocket:
+    build:
+      context: .
+      dockerfile: docker/hh-python-core
+    depends_on:
+      - db
+      - redis
+    command: "uwsgi --http-socket :8000 --http-websockets --master --workers 4 --wsgi-file HalliganAvailability/wsgi_websocket.py"
+    secrets:
+      - db_password
+      - redis_password
+      - email_password
+      - secret_key
+    environment:
+      - "DEBUG=False"
+      - "DJANGO_SETTINGS_MODULE=HalliganAvailability.settings"
+      - "REDIS_HOST=redis"
+      - "DB_NAME=halliganhelper"
+      - "DB_USER=halliganhelper"
+
+    volumes:
+        # The output of collectstatic is placed in /assets during build time. nginx needs to be able to server this assets
+      - assets:/assets
+        # Another container builds webpack-stats/webpack-stats.json. Django needs it to know which asset urls to link to
+      - assets-stats:/webpack-stats:ro
+
+
+  # This is the main database
+  db:
+    build:
+      context: .
+      dockerfile: docker/hh-database
+    image: postgres:9.4
+    volumes:
+        # This persists the DB data between container runs
+      - db-data:/var/lib/postgresql/data/pgdata
+    secrets:
+      - db_password
+      - db_root_password
+    environment:
+        # The postgres docs recommend placing data in a `pgdata` subdirectory if they need to be in a volume
+      - PGDATA=/var/lib/postgresql/data/pgdata
+      - "DATABASE_PASSWORD_FILE=/run/secrets/db_root_password"
+
+  # redis is used for caching user sessions and as a message queue for websockets
+  redis:
+    build:
+      context: .
+      dockerfile: docker/hh-redis
+    secrets:
+      - redis_password
+    volumes:
+      - redis-data:/data
+
+  # nginx is used to serve the app and all of its assets
+  proxy:
+    build:
+      context: .
+      dockerfile: docker/hh-nginx
+    depends_on:
+      - web
+      - websocket
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - assets:/assets:ro
+
+volumes:
+  redis-data:
+  assets:
+  assets-stats:
+  db-data:
+secrets:
+  db_root_password:
+    file: ./secrets/${ENVIRONMENT:?err}/db_root_password
+  db_password:
+    file: ./secrets/${ENVIRONMENT:?err}/db_password
+  redis_password:
+    file: ./secrets/${ENVIRONMENT:?err}/redis_password
+  email_password:
+    file: ./secrets/${ENVIRONMENT:?err}/email_password
+  secret_key:
+    file: ./secrets/${ENVIRONMENT:?err}/secret_key

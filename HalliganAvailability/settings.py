@@ -1,12 +1,87 @@
 # Django settings for HalliganAvailability project.
 import os
+import errno
+import logging
+logger = logging.getLogger(__name__)
+
+
+def get_secret_from_file(secret_name):
+    """Fetch a secret from the file, return None if it doesn't exist
+
+    Args:
+        secret_name (str): the name of the file to read
+        path_prefix (str): the directory the file lives in
+
+    Returns:
+        str or None: the secret, or None if not found
+    """
+    val = None
+    try:
+        with open(secret_name, 'r') as f:
+            val = f.read().strip()
+    except (OSError, IOError):
+        logger.error('Failed to get secret from %s', path, exc_info=True)
+
+    return val
+
+
+def get_secret_from_env(secret_name):
+    """Fetch a secret from an environment var, return None if it doesn't exist
+
+    Args:
+        secret_name (str): the name of the environment variable to read from
+
+    Returns:
+        str or None: the secret, or None if not found
+    """
+    val = os.environ.get(secret_name)
+    if val is None:
+        logger.error('Failed to find environment variable %s', secret_name)
+    return val
+
+
+def get_secret(secrets):
+    """Fetch a secret from the first available location in `secrets`
+    Args:
+        secrets (List[str]): a list of places to look for secrets. 
+            The secret is returned from the first place it is found.
+
+            Entries in this list must be in one of the following forms:
+                `file:<path_to_file>` - to look up the secret from a file
+                `env:<env_var_name>` - to look up the secret from an env var
+    Returns:
+        str: The found secret
+
+    Raises:
+        Exception: If the secret isn't found in any of the locations
+    """
+    _secrets = secrets[:]
+    val = None
+    while val is None and len(_secrets):
+        secret = _secrets.pop()
+        if secret.startswith('file:'):
+            val = get_secret_from_file(secret[5:])
+        if secret.startswith('env:'):
+            val = get_secret_from_env(secret[4:])
+
+        if val:
+            break
+
+    if val is None:
+        raise Exception(
+            'Failed to get value for secrets %s', ','.join(secrets)
+        )
+
+    return val
+
 
 PROJECT_ROOT = os.path.join(os.path.dirname(__file__), '..')
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'  # env vars are strings
-SECRET_KEY = os.environ.get('SECRET_KEY', '')
 ALLOWED_HOSTS = ['*']
+
+SECRET_KEY = get_secret(['file:/var/secrets/secret_key', 'env:SECRET_KEY'])
 
 MANAGERS = ADMINS = (
     ('Tyler Lubeck', 'Tyler@tylerlubeck.com'),
@@ -40,9 +115,11 @@ USE_TZ = True
 # Use redis for session management
 
 SESSION_ENGINE = 'redis_sessions.session'
-SESSION_REDIS_HOST = REDIS_HOST = 'localhost'
-SESSION_REDIS_PORT = REDIS_PORT = 6666
-SESSION_REDIS_PASSWORD = REDIS_PASSWORD = os.environ.get('REDIS_PASSWORD', '')
+SESSION_REDIS_HOST = REDIS_HOST = os.environ.get('REDIS_HOST', 'redis')
+SESSION_REDIS_PORT = REDIS_PORT = 6379
+SESSION_REDIS_PASSWORD = REDIS_PASSWORD = get_secret(
+    ['file:/var/secrets/redis_password', 'env:REDIS_PASSWORD']
+)
 SESSION_REDIS_PREFIX = 'session'
 
 TEMPLATES = [
@@ -119,7 +196,7 @@ REGISTRATION_OPEN = True
 
 LOGIN_URL = '/'
 LOGIN_REDIRECT_URL = '/'
-BROKER_URL = 'redis://localhost:6379/0'
+BROKER_URL = 'redis://redis:6379/0'
 BROKER_TRANSPORT_OPTIONS = {'visibility_timeout': 10850}
 
 
@@ -148,10 +225,10 @@ WS4REDIS_CONNECTION = {
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'halliganhelper',
-        'USER': 'postgres',
-        'PASSWORD': '',
-        'HOST': 'localhost'
+        'NAME': os.environ.get('DB_NAME', ''),
+        'USER': os.environ.get('DB_USER', ''),
+        'PASSWORD': get_secret(['file:/var/secrets/db_password', 'env:DB_PASSWORD']),
+        'HOST': 'db'
     }
 }
 
@@ -160,19 +237,17 @@ DEFAULT_FROM_EMAIL = 'support@halliganhelper.com'
 EMAIL_HOST = 'smtp.zoho.com'
 EMAIL_PORT = 465
 EMAIL_USE_SSL = True
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_PASSWORD', '')
+EMAIL_HOST_PASSWORD = get_secret(['file:/var/secrets/email_password', 'env:EMAIL_PASSWORD'])
 
 if DEBUG:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # Static Assets
 MEDIA_URL = '/media/'
-media_root_default = os.path.join(os.path.dirname(BASE_DIR), 'mediafiles')
-MEDIA_ROOT = os.environ.get('MEDIA_ROOT', media_root_default)
+MEDIA_ROOT = '/media'
 
 STATIC_URL = '/static/'
-static_root_default = os.path.join(os.path.dirname(BASE_DIR), 'staticfiles')
-STATIC_ROOT = os.environ.get('STATIC_ROOT', static_root_default)
+STATIC_ROOT = '/assets'
 
 STATICFILES_DIRS = (
     os.path.join(PROJECT_ROOT, 'assets'),
@@ -182,7 +257,7 @@ STATICFILES_DIRS = (
 WEBPACK_LOADER = {
     'DEFAULT': {
         'BUNDLE_DIR_NAME': 'bundles/',
-        'STATS_FILE': os.path.join(PROJECT_ROOT, 'webpack-stats.json'),
+        'STATS_FILE': '/webpack-stats/webpack-stats.json',
     },
 }
 

@@ -1,0 +1,4 @@
+FROM node:6-stretch
+COPY . /code
+WORKDIR /code
+RUN mkdir /webpack-stats && npm install

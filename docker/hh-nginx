@@ -1,0 +1,4 @@
+FROM nginx:latest
+COPY ./nginx/nginx.conf /etc/nginx/nginx.conf
+COPY ./nginx/sites-enabled /etc/nginx/sites-enabled
+COPY ./nginx/ssl /etc/nginx/ssl

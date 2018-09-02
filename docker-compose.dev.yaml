@@ -1,0 +1,38 @@
+# This compose file is set up for development. It needs to be used alongside
+# the docker-compose.yaml file
+
+version: '3.7'
+services:
+
+  web:
+    command: "uwsgi --http-socket :8000 --master --workers 4 --python-autoreload 2 --wsgi-file HalliganAvailability/wsgi.py"
+    environment:
+      - "DEBUG=True" 
+    volumes:
+      - "./:/code"
+
+  websocket:
+    build:
+      context: .
+      dockerfile: docker/hh-python-core
+    depends_on:
+      - db
+      - redis
+    command: "uwsgi --http-socket :8000 --http-websockets --master --workers 4 --python-autoreload 2 --wsgi-file HalliganAvailability/wsgi_websocket.py"
+    volumes:
+      - "./:/code"
+    environment:
+      - "DEBUG=True"
+
+  webpack:
+    build:
+      context: .
+      dockerfile: docker/hh-npm
+    volumes:
+      - ./:/code
+      - assets:/build
+      - assets-stats:/webpack-stats
+    command: npm run webpack-watch
+volumes:
+  assets:
+  assets-stats:

@@ -13,7 +13,7 @@ module.exports = {
     },
 
     output: {
-        path: path.resolve('./assets/bundles/'),
+        path: path.resolve('/build/bundles/'),
         filename: "[name]-[hash].js",
     },
 
@@ -25,7 +25,7 @@ module.exports = {
     */
 
     plugins: [
-        new BundleTracker({filename: './webpack-stats.json'}),
+        new BundleTracker({path: '/webpack-stats/', filename: './webpack-stats.json'}),
         new webpack.ContextReplacementPlugin(/moment[\/\\]locale$/, /en/),
         new AppCachePlugin({
             output: 'manifest.appcache',

@@ -1,0 +1,27 @@
+# This compose file is set up to run database migrations. It's needed for both 
+# development and production, and needs to be run alongside docker-compose.yaml
+
+version: '3.7'
+services:
+
+  # This container will run relatively quickly and should exit 0
+  db-migrations:
+    build:
+      context: .
+      dockerfile: docker/hh-python-core
+    depends_on:
+      - db
+    command: "python manage.py migrate --no-input"
+    secrets:
+      - db_password
+      - redis_password
+      - email_password
+      - secret_key
+    environment:
+      - "DEBUG=True"
+      - "DJANGO_SETTINGS_MODULE=HalliganAvailability.settings"
+      - "REDIS_HOST=redis"
+      - "DB_NAME=halliganhelper"
+      - "DB_USER=halliganhelper"
+    volumes:
+      - './:/code'

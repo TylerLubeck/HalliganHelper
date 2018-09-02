@@ -1,3 +1,5 @@
+secrets/prod/*
+!secrets/prod/.keep
 mediafiles/headshots/
 .cache/
 htmlcov/

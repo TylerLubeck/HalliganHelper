@@ -57,38 +57,27 @@ and offer constructive criticism. If a reviewer offers criticism that you feel
 is something other than constructive, feel free to call them out.
 
 
-### Setup
+### Development Setup
 
-1. Install Vagrant
-2. Install virtualbox
-3. Clone this repo
-4. run ```vagrant up```
-6. There's one last setup piece that I didn't automate:
-   ```bash
-   vagrant ssh
-   # In the ssh shell:
-   mkdir -p ~/HH/node_modules
-   mkdir -p ~/vagrant_node_modules
-   sudo mount --bind ~/vagrant_node_modules ~/HH/node_modules
-   ```
-5. Now, whenever you want to work: In two separate shells, run ```vagrant ssh```.
-7. In one of the ssh sessions, run:
-   ```bash
-   workon hh
-   npm install
-   npm run webpack-watch
-   ```
+1. Install [docker](https://www.docker.com/products/docker-desktop)
+2. Start everything with docker compose:  `docker-compose -f docker-compose.yaml -f docker-compose.dev.yaml up -d`
+3. Run all database migrations with docker compose: `docker-compose -f docker-compose.yaml -f docker-compose.dev.yaml up db-migrations`
+   . This should print a bunch of lines with `OK`, and then exit 0
+4. Create a super user: `docker-compose -f docker-compose.yaml -f docker-compose.dev.yaml run python migrate.py createsuperuser`
+5. Visit the site at `https://localhost` - You may have to allow a self-signed cert
 
-8. In the other ssh session, run:
-  ```bash 
-  workon hh
-  pip install -r requirements.txt
-  ./manage.py migrate # There might be an issue here about there not being a row with administrator_id=1. If so, create a superuser and migrate again.
-  ./manage.py createsuperuser
-  ./run.sh
-  ```
 
-You can write code on your local machine and the VM will automatically pick it up and refresh. You can access the site at `http://localhost:8000`.
+#### Changing Python Packages
+
+If you make any changes to `requirements.txt` then you'll need to rebuild the containers to pull the changes in.
+The easiest way to do this is to redeploy with `docker-compose -f docker-compose.yaml -f docker-compose.dev.yaml up --build -d`
+
+
+As you write your python code, uwsgi will detect the changes and automatically reload the server
+
+As you write your javascript code, webpack will detect the changes and automatically re-render the output
+
+Either way, you'll need to refresh the browser after changes.
 
 
 [python]: https://www.python.org/

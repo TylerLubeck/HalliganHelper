@@ -1,0 +1,26 @@
+FROM node:6-stretch as assets
+COPY . /code
+WORKDIR /code
+RUN mkdir /webpack-stats && npm install
+RUN npm run webpack
+
+
+FROM python:2.7.15-stretch
+EXPOSE 8000
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+COPY  --from=assets /build /assets 
+COPY --from=assets /webpack-stats /webpack-stats
+
+COPY . /code
+WORKDIR /code
+
+RUN pip install -r /code/requirements.txt
+
+# Collectstatic during build time so the assets are tied to the image
+RUN SECRET_KEY=dummy-for-static-files \
+    REDIS_PASSWORD=dummy-for-static-files \
+    DB_PASSWORD=dummy-for-static-files \
+    EMAIL_PASSWORD=dummy-for-static-files \
+    DEBUG=True \
+    python manage.py collectstatic --no-input

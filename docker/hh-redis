@@ -1,0 +1,3 @@
+FROM redis:4-alpine
+COPY ./docker/redis/entrypoint /redis-start
+ENTRYPOINT /redis-start
